@@ -391,6 +391,10 @@ MotifRegressor::getTestDataLikelihood(double& unpenalized, ofstream& outf, ofstr
 	vector<double> allTrue;
 	vector<double> allPredicted;
 
+	// per dimension true/predicted
+	DIMMAP dimModuleTrue;
+	DIMMAP dimModulePred;
+
 	// for each gene...
 	for(map<int,int>::iterator vIter=varsWithPredictors_Test.begin();vIter!=varsWithPredictors_Test.end();vIter++)
 	{
@@ -462,7 +466,17 @@ MotifRegressor::getTestDataLikelihood(double& unpenalized, ofstream& outf, ofstr
 
 			allPredicted.push_back(mean->getValue(0,i));
 			allTrue.push_back(evid->getEvidVal());
+
+			// store per dimension
+			dimModulePred[i][bestID].push_back(mean->getValue(0,i));
+			dimModuleTrue[i][bestID].push_back(evid->getEvidVal());
 		}
+	}
+
+	// report per dimension if more than one
+	if (dimModuleTrue.size()>1)
+	{
+		computeCC_Per_Dim(overallf, dimModuleTrue, dimModulePred);
 	}
 
 	// NOW for each module, compute CC
@@ -495,7 +509,47 @@ MotifRegressor::getTestDataLikelihood(double& unpenalized, ofstream& outf, ofstr
 	return ll;
 }
 
+/**
+* Computes CC across test genes for each dimension separately.
+*/
+int 
+MotifRegressor::computeCC_Per_Dim(ofstream& overallf, DIMMAP trueVals, DIMMAP predVals)
+{
+	Distance d;
+	for (DIMMAP::iterator dIter=trueVals.begin(); dIter!=trueVals.end();dIter++)
+	{
+		vector<double> dimAllTrue; // all vals in this dimension
+		vector<double> dimAllPred; 
 
+		int dim=dIter->first;
+		map<int,vector<double> > perModuleTrue=dIter->second;
+		map<int,vector<double> > perModulePredicted=predVals[dim];
+
+		double totalCorr=0; // get avg per module within this dimension
+		
+		for (map<int,vector<double> >::iterator mIter=perModuleTrue.begin(); mIter!=perModuleTrue.end(); mIter++)
+		{
+			int id=mIter->first;
+			vector<double> truevals=mIter->second;
+			vector<double> predvals=perModulePredicted[id];
+
+			double cc=d.computeCC(truevals, predvals);
+			overallf << id << "_Dim" << dim << "\t" << cc << endl;
+			totalCorr+=cc;
+
+			dimAllTrue.insert(dimAllTrue.end(), truevals.begin(), truevals.end());
+			dimAllPred.insert(dimAllPred.end(), predvals.begin(), predvals.end());
+		}
+
+		// print for this dimension
+		// also print the overall correlation and the mean
+		overallf << "AvgPerModule_Dim" << dim << "\t" << totalCorr/perModuleTrue.size() << endl;
+		double cc=d.computeCC(dimAllTrue, dimAllPred);
+		overallf << "Overall_Dim" << dim << "\t" << cc << endl;
+	}
+
+	return 0;
+}
 
 double
 MotifRegressor::getTestDataLikelihood(double& unpenalized)

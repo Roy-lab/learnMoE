@@ -6,6 +6,9 @@ class MotifManager;
 class Expert;
 class Matrix;
 class BFGSWrapper;
+
+typedef map<int,map<int, vector<double> > > DIMMAP;
+
 class MotifRegressor
 {
 	public:
@@ -44,6 +47,9 @@ class MotifRegressor
 		int predictTestExpression();
 		double getTestDataLikelihood(double&);
 		double getTestDataLikelihood(double&, ofstream& outf, ofstream& ccoutf); // DC added the ofstreams Jan 2018
+		// prints out per-dimension correlations between predicted and true
+		int computeCC_Per_Dim(ofstream& ccoutf, DIMMAP trueVals, DIMMAP predVals);
+
 		int setUntransformedData(const char*);
 
 	private:
@@ -80,7 +86,8 @@ class MotifRegressor
 		int showGammas(const char*);
 		int readClusterMembership();
 		int showUntransformedFName();
-		
+
+
 		EvidenceManager* evMgr;
 		VariableManager* varMgr;
 		MotifManager* motifMgr;
