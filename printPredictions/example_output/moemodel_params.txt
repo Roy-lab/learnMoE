@@ -1,0 +1,6 @@
+Expert0_GaussianMean	7.09056
+Expert0_GaussianCov	0.850766
+Expert1_GaussianMean	4.25057
+Expert1_GaussianCov	0.943088
+Expert2_GaussianMean	9.70132
+Expert2_GaussianCov	1.57055
